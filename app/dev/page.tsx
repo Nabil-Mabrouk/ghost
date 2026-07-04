@@ -37,7 +37,9 @@ export default function DevPage() {
     const id = await addLog({
       point_id: "PUMP-A",
       image: blob,
-      voice_transcript: "Dev panel dummy log entry.",
+      // The demo-script phrase: exercises the mock brain's critical path.
+      voice_transcript:
+        "Logging pump A. Hearing a strange rattle near the motor mount.",
     });
     say(`dummy log #${id} written (2048-byte blob)`);
     await refresh();
