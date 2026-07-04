@@ -5,7 +5,6 @@ import {
   AutoProcessor,
   Gemma4ForConditionalGeneration,
   RawImage,
-  TextStreamer,
   pipeline,
   type AutomaticSpeechRecognitionPipeline,
 } from "@huggingface/transformers";
@@ -157,17 +156,13 @@ async function runGemma(
     enable_thinking: false,
     add_generation_prompt: true,
   });
-  const inputs = image
-    ? await proc(prompt, image, { add_special_tokens: false })
-    : await proc(prompt, { add_special_tokens: false });
+  // Signature is (text, images, audio, options) — nulls must be explicit or
+  // the options object is read as audio input.
+  const inputs = await proc(prompt, image, null, { add_special_tokens: false });
   const outputs = await (gemma as any).generate({
     ...inputs,
     max_new_tokens: maxTokens,
     do_sample: false,
-    streamer: new TextStreamer(proc.tokenizer, {
-      skip_prompt: true,
-      skip_special_tokens: false,
-    }),
   });
   const decoded = proc.batch_decode(
     outputs.slice(null, [inputs.input_ids.dims.at(-1), null]),

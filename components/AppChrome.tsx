@@ -15,6 +15,10 @@ export default function AppChrome({
     setStatus({ engine: "gpu" in navigator ? "webgpu" : "wasm" });
     // Ask the browser not to evict our IndexedDB (photos + model cache matter).
     navigator.storage?.persist?.().catch(() => {});
+    // Offline app shell — production builds only (SW fights the dev server).
+    if (process.env.NODE_ENV === "production" && "serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js").catch(() => {});
+    }
   }, []);
 
   return (

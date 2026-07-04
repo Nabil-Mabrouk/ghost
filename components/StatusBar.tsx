@@ -17,7 +17,7 @@ function modelLabel(state: string, pct: number): string {
 }
 
 export default function StatusBar() {
-  const { engine, gemma, gemmaPct } = useAppStatus();
+  const { engine, gemma, gemmaPct, whisper, whisperPct } = useAppStatus();
   // Offline is the *good* state for this app: green dot when disconnected.
   const [online, setOnline] = useState(true);
 
@@ -41,9 +41,16 @@ export default function StatusBar() {
       </span>
       <span className="text-nominal">|</span>
       <span>
-        MODEL:{" "}
+        LLM:{" "}
         <span className={gemma === "ready" ? "text-ok" : "text-accent"}>
           {modelLabel(gemma, gemmaPct)}
+        </span>
+      </span>
+      <span className="text-nominal">|</span>
+      <span>
+        STT:{" "}
+        <span className={whisper === "ready" ? "text-ok" : "text-accent"}>
+          {modelLabel(whisper, whisperPct)}
         </span>
       </span>
       <span className="ml-auto flex items-center gap-2">
