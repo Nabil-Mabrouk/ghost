@@ -6,7 +6,8 @@ export const CAPTION_PROMPT =
   "photo for a maintenance record in 2-3 sentences. State: equipment type, " +
   "orientation and alignment, visible condition (rust, leaks, loose " +
   "fittings, gauge readings, tilt), and anything unusual. Physical " +
-  "observations only.";
+  "observations only. Respond in plain prose — no markdown, no headings, " +
+  "no bullet points.";
 
 /** Neutralize characters that could break the JSON instruction framing. */
 function sanitize(text: string): string {
