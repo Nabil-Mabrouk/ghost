@@ -1,0 +1,86 @@
+@import "tailwindcss";
+
+/* GHOST-WALK design tokens — "Industrial Tactical" (SPEC.md §4) */
+:root {
+  --bg: #0d0d0d;
+  --card: #1a1a1a;
+  --accent: #efff00;
+  --critical: #ff3b30;
+  --nominal: #4a4a4a;
+  --ok: #22c55e;
+  --text: #d4d4d4;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-card: var(--card);
+  --color-accent: var(--accent);
+  --color-critical: var(--critical);
+  --color-nominal: var(--nominal);
+  --color-ok: var(--ok);
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+}
+
+/* Full-viewport CRT scanline overlay */
+.scanlines {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 100;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 2px,
+    rgba(0, 0, 0, 0.35) 3px
+  );
+  opacity: 0.25;
+}
+
+/* Capture feedback: one-shot glitch flash */
+@keyframes glitch-flash {
+  0% {
+    filter: invert(1) hue-rotate(90deg);
+    transform: translateX(-3px);
+  }
+  25% {
+    filter: invert(0);
+    transform: translateX(3px);
+  }
+  50% {
+    filter: invert(0.6);
+    transform: translateX(-2px) skewX(2deg);
+  }
+  100% {
+    filter: invert(0);
+    transform: none;
+  }
+}
+.glitch-once {
+  animation: glitch-flash 220ms steps(2, end) 1;
+}
+
+/* Blinking cursor for terminal boxes */
+@keyframes blink {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+.terminal-cursor::after {
+  content: "▊";
+  color: var(--accent);
+  animation: blink 1s infinite;
+}
+
+/* Pulsing consolidation bar (sleep mode) */
+@keyframes pulse-bar {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+.pulse-bar {
+  animation: pulse-bar 1.6s ease-in-out infinite;
+}
