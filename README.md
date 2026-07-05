@@ -49,4 +49,7 @@ Hidden operator panel at `/dev`: seed a demo baseline, toggle the mock brain, in
 
 ## Demo video
 
-*(link added at submission)*
+▶ **[Watch the 60-second demo](https://youtu.be/-Iac8ux2at4)**
+
+Site imagery in the film is AI-generated; all application footage is a live
+screen recording of the working app.

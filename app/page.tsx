@@ -58,12 +58,12 @@ export default function LandingPage() {
           60-second demo
         </h2>
         <div className="bg-card border border-nominal/60 p-1">
-          <video
-            controls
-            preload="metadata"
-            playsInline
-            className="w-full aspect-video bg-bg"
-            src="/demo/ghostwalk-demo.mp4"
+          <iframe
+            src="https://www.youtube-nocookie.com/embed/-Iac8ux2at4"
+            title="GHOST-WALK — 60-second demo"
+            allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+            className="w-full aspect-video bg-bg border-0"
           />
         </div>
         <p className="mt-2 text-[10px] text-nominal tracking-wide">
