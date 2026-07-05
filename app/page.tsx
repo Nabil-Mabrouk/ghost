@@ -1,7 +1,7 @@
 import Link from "next/link";
 import {
+  Code2,
   Footprints,
-  Github,
   Moon,
   PlayCircle,
   Rocket,
@@ -47,7 +47,7 @@ export default function LandingPage() {
             rel="noopener noreferrer"
             className="flex items-center gap-2 border border-nominal/60 text-nominal px-6 py-3 text-sm tracking-widest hover:text-text hover:border-text"
           >
-            <Github size={16} /> SOURCE
+            <Code2 size={16} /> SOURCE
           </a>
         </div>
       </section>

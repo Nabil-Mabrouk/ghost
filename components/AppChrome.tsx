@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { usePathname } from "next/navigation";
 import StatusBar from "./StatusBar";
 import TabNav from "./TabNav";
 import { setStatus } from "@/lib/status";
@@ -10,6 +11,9 @@ export default function AppChrome({
 }: {
   children: React.ReactNode;
 }) {
+  // The landing page is marketing, not the instrument — no tactical chrome.
+  const isLanding = usePathname() === "/";
+
   useEffect(() => {
     // Engine detection (SPEC.md §2.3) — actual adapter init happens in the worker.
     setStatus({ engine: "gpu" in navigator ? "webgpu" : "wasm" });
@@ -20,6 +24,15 @@ export default function AppChrome({
       navigator.serviceWorker.register("/sw.js").catch(() => {});
     }
   }, []);
+
+  if (isLanding) {
+    return (
+      <>
+        <main className="min-h-dvh">{children}</main>
+        <div className="scanlines" aria-hidden />
+      </>
+    );
+  }
 
   return (
     <>

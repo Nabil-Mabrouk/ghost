@@ -1,0 +1,23 @@
+# GHOST-WALK — Caddy config for a Contabo Ubuntu VPS.
+# Replace the site address with your domain (A record -> server IP).
+# No domain? Use sslip.io wildcard DNS: e.g.  203-0-113-7.sslip.io
+# Caddy provisions Let's Encrypt certificates automatically — HTTPS is
+# MANDATORY here: WebGPU, camera, and microphone all require a secure context.
+
+ghostwalk.example.com {
+	root * /var/www/ghostwalk
+	encode gzip
+
+	# Next.js static export: /walk is walk.html on disk.
+	try_files {path} {path}.html {path}/index.html
+
+	file_server
+
+	# The service worker must never be cached stale.
+	@sw path /sw.js
+	header @sw Cache-Control "no-cache"
+
+	# Long-cache immutable build assets.
+	@assets path /_next/static/*
+	header @assets Cache-Control "public, max-age=31536000, immutable"
+}

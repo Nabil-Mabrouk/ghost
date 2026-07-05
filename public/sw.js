@@ -2,11 +2,15 @@
 // Strategy: cache-first with background refresh for same-origin GETs.
 // Model weights are NOT handled here: transformers.js caches them in the
 // browser Cache API itself, so huggingface.co requests pass straight through.
-const CACHE = "ghostwalk-shell-v1";
+const CACHE = "ghostwalk-shell-v2";
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE).then((c) => c.addAll(["/", "/walk", "/sleep", "/briefing"])),
+    caches
+      .open(CACHE)
+      .then((c) =>
+        c.addAll(["/", "/init", "/walk", "/sleep", "/briefing"]),
+      ),
   );
   self.skipWaiting();
 });
