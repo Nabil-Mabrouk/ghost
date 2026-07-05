@@ -1,28 +1,25 @@
 // Prompt templates (SPEC.md §3). Kept on the main thread so the worker stays
-// a dumb text/image engine and prompts are unit-testable.
-
-export const CAPTION_PROMPT =
-  "You are an industrial inspection camera system. Describe this equipment " +
-  "photo for a maintenance record in 2-3 sentences. State: equipment type, " +
-  "orientation and alignment, visible condition (rust, leaks, loose " +
-  "fittings, gauge readings, tilt), and anything unusual. Physical " +
-  "observations only. Respond in plain prose — no markdown, no headings, " +
-  "no bullet points.";
+// a dumb text/image engine and prompts are unit-testable. Caption prompts are
+// domain-specific and live in lib/domains.ts.
+import { getActiveDomain, type Domain } from "@/lib/domains";
 
 /** Neutralize characters that could break the JSON instruction framing. */
 function sanitize(text: string): string {
   return text.replace(/[{}]/g, " ").replace(/\s+/g, " ").trim();
 }
 
-export function buildAnalysisPrompt(input: {
-  point_id: string;
-  historical: string;
-  current: string;
-  note: string;
-}): string {
+export function buildAnalysisPrompt(
+  input: {
+    point_id: string;
+    historical: string;
+    current: string;
+    note: string;
+  },
+  domain: Domain = getActiveDomain(),
+): string {
   return [
-    "You are the GHOST-WALK Site Auditor performing overnight memory",
-    `consolidation for checkpoint ${sanitize(input.point_id)}.`,
+    `${domain.persona}`,
+    `for checkpoint ${sanitize(input.point_id)}.`,
     "",
     `HISTORICAL_BASELINE (previous pass): ${sanitize(input.historical)}`,
     `CURRENT_OBSERVATION (this pass): ${sanitize(input.current)}`,
@@ -33,8 +30,8 @@ export function buildAnalysisPrompt(input: {
     "Score drift_score on this scale:",
     "0-2 = no meaningful change, worker reports nothing acute.",
     "3-4 = cosmetic or environmental difference (lighting, angle, background); no structural concern.",
-    "5-6 = EITHER a visible physical change OR an acute worker-reported symptom (noise, leak, vibration, smell), but not both.",
-    "7-8 = a visible physical change to the equipment (tilt, displacement, loose part, leak, deformation) AND a worker-reported symptom that plausibly share a cause.",
+    "5-6 = EITHER a visible physical change OR an acute worker-reported symptom (noise, leak, vibration, smell, wilting, limping), but not both.",
+    `7-8 = a visible physical change to the ${domain.subjectNoun} (tilt, displacement, loose part, leak, deformation, lesions, decline) AND a worker-reported symptom that plausibly share a cause.`,
     "9-10 = clear damage or imminent failure indicators.",
     "A reported symptom like a rattle or leak is evidence even when the photo cannot show it — never score below 5 when the worker reports an acute symptom.",
     "Respond with ONLY a JSON object, no markdown:",

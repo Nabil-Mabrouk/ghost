@@ -2,9 +2,11 @@
 
 // Camera frame + microphone capture helpers (SPEC.md §1.1).
 
-/** Center-crop the live video frame to 4:3 and encode as JPEG. */
-export function frameToBlob(
-  video: HTMLVideoElement,
+/** Center-crop any drawable source to 4:3 and encode as JPEG. */
+function cropToJpeg(
+  source: CanvasImageSource,
+  srcW: number,
+  srcH: number,
   width = 1024,
   quality = 0.8,
 ): Promise<Blob> {
@@ -14,8 +16,6 @@ export function frameToBlob(
   canvas.height = height;
   const ctx = canvas.getContext("2d")!;
 
-  const srcW = video.videoWidth;
-  const srcH = video.videoHeight;
   const targetRatio = 4 / 3;
   let cropW = srcW;
   let cropH = srcH;
@@ -24,7 +24,7 @@ export function frameToBlob(
   const cropX = Math.round((srcW - cropW) / 2);
   const cropY = Math.round((srcH - cropH) / 2);
 
-  ctx.drawImage(video, cropX, cropY, cropW, cropH, 0, 0, width, height);
+  ctx.drawImage(source, cropX, cropY, cropW, cropH, 0, 0, width, height);
   return new Promise((resolve, reject) => {
     canvas.toBlob(
       (blob) => (blob ? resolve(blob) : reject(new Error("toBlob failed"))),
@@ -32,6 +32,53 @@ export function frameToBlob(
       quality,
     );
   });
+}
+
+/** Grab the current live camera frame. */
+export function frameToBlob(
+  video: HTMLVideoElement,
+  width = 1024,
+  quality = 0.8,
+): Promise<Blob> {
+  return cropToJpeg(video, video.videoWidth, video.videoHeight, width, quality);
+}
+
+/**
+ * Import an observation from a file instead of the live camera: image files
+ * are normalized (4:3 crop, JPEG), video files contribute a single frame
+ * (~1s in, or the middle of very short clips).
+ */
+export async function fileToBlob(file: File): Promise<Blob> {
+  if (file.type.startsWith("image/")) {
+    const bitmap = await createImageBitmap(file);
+    try {
+      return await cropToJpeg(bitmap, bitmap.width, bitmap.height);
+    } finally {
+      bitmap.close();
+    }
+  }
+  if (file.type.startsWith("video/")) {
+    const url = URL.createObjectURL(file);
+    try {
+      const video = document.createElement("video");
+      video.muted = true;
+      video.playsInline = true;
+      video.src = url;
+      await new Promise<void>((res, rej) => {
+        video.onloadedmetadata = () => res();
+        video.onerror = () => rej(new Error("video load failed"));
+      });
+      video.currentTime = Math.min(1, video.duration / 2);
+      await new Promise<void>((res, rej) => {
+        video.onseeked = () => res();
+        video.onerror = () => rej(new Error("video seek failed"));
+      });
+      return await cropToJpeg(video, video.videoWidth, video.videoHeight);
+    } finally {
+      URL.revokeObjectURL(url);
+    }
+  }
+  throw new Error(`unsupported file type: ${file.type || "unknown"}`);
 }
 
 export interface AudioRecording {

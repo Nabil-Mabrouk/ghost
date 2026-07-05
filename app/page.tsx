@@ -4,10 +4,12 @@ import { useState } from "react";
 import Link from "next/link";
 import { ChevronRight, DownloadCloud } from "lucide-react";
 import { getBrain } from "@/lib/brain/client";
+import { DOMAINS, getActiveDomain, setActiveDomain } from "@/lib/domains";
 import { useAppStatus } from "@/lib/status";
 
 export default function BootPage() {
   const { engine, gemma, gemmaPct, whisper, whisperPct } = useAppStatus();
+  const [domainId, setDomainId] = useState(() => getActiveDomain().id);
   const [initError, setInitError] = useState<string | null>(null);
   const busy = gemma === "loading" || whisper === "loading";
   const ready = gemma === "ready" && whisper === "ready";
@@ -55,6 +57,31 @@ export default function BootPage() {
           ok={whisper === "ready"}
         />
         <Row label="DATA RESIDENCY" value="THIS DEVICE" ok />
+      </div>
+
+      {/* Domain profile: same agent, different route + vocabulary */}
+      <div className="w-full max-w-sm">
+        <p className="text-[9px] tracking-widest text-nominal uppercase mb-1.5">
+          Site profile
+        </p>
+        <div className="grid grid-cols-2 gap-2">
+          {DOMAINS.map((d) => (
+            <button
+              key={d.id}
+              onClick={() => {
+                setActiveDomain(d.id);
+                setDomainId(d.id);
+              }}
+              className={`py-2 text-[10px] tracking-widest border ${
+                domainId === d.id
+                  ? "bg-accent text-bg border-accent font-bold"
+                  : "border-nominal/60 text-nominal hover:text-text"
+              }`}
+            >
+              {d.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {initError && (

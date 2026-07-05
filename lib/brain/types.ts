@@ -26,7 +26,7 @@ export type MainToWorker =
   | { kind: "init"; engine: Engine }
   | { kind: "ensure"; reqId: number; model: ModelName }
   | { kind: "transcribe"; reqId: number; audio: Float32Array }
-  | { kind: "caption"; reqId: number; image: Blob }
+  | { kind: "caption"; reqId: number; image: Blob; prompt: string }
   | { kind: "analyse"; reqId: number; prompt: string };
 
 export type WorkerToMain =

@@ -1,6 +1,7 @@
 "use client";
 
 import type { DriftResult } from "@/lib/db";
+import { getActiveDomain } from "@/lib/domains";
 import { setStatus } from "@/lib/status";
 import { MockBrain } from "./mock";
 import { heuristicDrift, parseDriftJson } from "./parse";
@@ -106,7 +107,7 @@ class WorkerBrain implements Brain {
     msg:
       | { kind: "ensure"; model: ModelName }
       | { kind: "transcribe"; audio: Float32Array }
-      | { kind: "caption"; image: Blob }
+      | { kind: "caption"; image: Blob; prompt: string }
       | { kind: "analyse"; prompt: string },
     timeoutMs: number,
     transfer: Transferable[] = [],
@@ -139,7 +140,10 @@ class WorkerBrain implements Brain {
   }
 
   async caption(image: Blob): Promise<string> {
-    return this.request({ kind: "caption", image }, TIMEOUTS.caption);
+    return this.request(
+      { kind: "caption", image, prompt: getActiveDomain().captionPrompt },
+      TIMEOUTS.caption,
+    );
   }
 
   async analyse(input: AnalyseInput): Promise<DriftResult> {

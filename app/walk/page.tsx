@@ -1,27 +1,40 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Camera, CameraOff, Mic, Zap } from "lucide-react";
+import { Camera, CameraOff, Mic, Upload, X, Zap } from "lucide-react";
 import Reticle from "@/components/Reticle";
 import { getBrain } from "@/lib/brain/client";
-import { frameToBlob, startAudioRecording, type AudioRecording } from "@/lib/capture";
+import {
+  fileToBlob,
+  frameToBlob,
+  startAudioRecording,
+  type AudioRecording,
+} from "@/lib/capture";
 import { addLog, countUnanalysed } from "@/lib/db";
+import { getActiveDomain } from "@/lib/domains";
 import { playClick, vibrate } from "@/lib/fx";
-import { POINTS } from "@/lib/points";
 
 type MicState = "idle" | "recording" | "transcribing" | "denied";
 
+interface Imported {
+  blob: Blob;
+  url: string;
+}
+
 export default function WalkPage() {
+  const [domain] = useState(getActiveDomain);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
   const recordingRef = useRef<AudioRecording | null>(null);
   const [camReady, setCamReady] = useState(false);
   const [camError, setCamError] = useState<string | null>(null);
-  const [point, setPoint] = useState(POINTS[0].id);
+  const [point, setPoint] = useState(domain.points[0].id);
   const [transcript, setTranscript] = useState("");
   const [micState, setMicState] = useState<MicState>("idle");
   const [unprocessed, setUnprocessed] = useState(0);
   const [flash, setFlash] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [imported, setImported] = useState<Imported | null>(null);
 
   const refreshCount = useCallback(async () => {
     setUnprocessed(await countUnanalysed());
@@ -47,7 +60,7 @@ export default function WalkPage() {
       } catch {
         if (!cancelled)
           setCamError(
-            "CAMERA UNAVAILABLE — grant permission and reload, or check that no other app holds the device.",
+            "CAMERA UNAVAILABLE — grant permission and reload, use IMPORT, or check that no other app holds the device.",
           );
       }
     })();
@@ -61,6 +74,24 @@ export default function WalkPage() {
       stream?.getTracks().forEach((t) => t.stop());
     };
   }, [refreshCount]);
+
+  function clearImport() {
+    if (imported) URL.revokeObjectURL(imported.url);
+    setImported(null);
+  }
+
+  async function onFilePicked(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // allow re-picking the same file
+    if (!file) return;
+    try {
+      const blob = await fileToBlob(file);
+      clearImport();
+      setImported({ blob, url: URL.createObjectURL(blob) });
+    } catch {
+      setCamError("IMPORT FAILED — unsupported or corrupt file.");
+    }
+  }
 
   // Hold-to-transcribe
   async function micDown() {
@@ -94,18 +125,22 @@ export default function WalkPage() {
     }
   }
 
+  const canLog = (camReady || imported !== null) && !saving;
+
   async function logEvent() {
-    const video = videoRef.current;
-    if (!video || !camReady || saving) return;
+    if (!canLog) return;
     setSaving(true);
     try {
-      const image = await frameToBlob(video);
+      const image = imported
+        ? imported.blob
+        : await frameToBlob(videoRef.current!);
       await addLog({ point_id: point, image, voice_transcript: transcript.trim() });
       playClick();
       vibrate(80);
       setFlash(true);
       setTimeout(() => setFlash(false), 250);
       setTranscript("");
+      clearImport();
       await refreshCount();
     } finally {
       setSaving(false);
@@ -120,7 +155,7 @@ export default function WalkPage() {
           flash ? "glitch-once" : ""
         }`}
       >
-        {camError ? (
+        {camError && !imported ? (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-6 text-center">
             <CameraOff className="text-critical" size={28} />
             <p className="text-[10px] tracking-widest text-nominal uppercase">
@@ -135,7 +170,23 @@ export default function WalkPage() {
             className="absolute inset-0 w-full h-full object-cover"
           />
         )}
-        {camReady && <Reticle />}
+        {imported && (
+          <>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={imported.url}
+              alt="Imported frame"
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+            <button
+              onClick={clearImport}
+              className="absolute top-2 right-2 z-10 flex items-center gap-1 bg-bg/80 border border-accent text-accent text-[9px] tracking-widest px-2 py-1"
+            >
+              IMPORTED FRAME <X size={10} />
+            </button>
+          </>
+        )}
+        {(camReady || imported) && <Reticle />}
         <span className="absolute top-2 left-1/2 -translate-x-1/2 text-[9px] tracking-[0.3em] bg-bg/70 px-2 py-0.5 text-accent">
           {point}
         </span>
@@ -143,7 +194,7 @@ export default function WalkPage() {
 
       {/* Checkpoint selector */}
       <div className="grid grid-cols-4 gap-2">
-        {POINTS.map((p) => (
+        {domain.points.map((p) => (
           <button
             key={p.id}
             onClick={() => setPoint(p.id)}
@@ -182,7 +233,21 @@ export default function WalkPage() {
       </div>
 
       {/* Actions */}
-      <div className="grid grid-cols-[1fr_2fr] gap-2">
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/*,video/*"
+        onChange={onFilePicked}
+        className="hidden"
+      />
+      <div className="grid grid-cols-[auto_1fr_2fr] gap-2">
+        <button
+          onClick={() => fileRef.current?.click()}
+          title="Import a photo or video frame instead of the live camera"
+          className="flex items-center justify-center px-4 border border-nominal/60 text-nominal hover:text-accent hover:border-accent"
+        >
+          <Upload size={16} />
+        </button>
         <button
           onPointerDown={micDown}
           onPointerUp={micUp}
@@ -199,7 +264,7 @@ export default function WalkPage() {
         </button>
         <button
           onClick={logEvent}
-          disabled={!camReady || saving}
+          disabled={!canLog}
           className="flex items-center justify-center gap-2 py-4 bg-accent text-bg font-bold text-sm tracking-widest disabled:opacity-40 active:scale-[0.98]"
         >
           {saving ? <Zap size={16} /> : <Camera size={16} />}

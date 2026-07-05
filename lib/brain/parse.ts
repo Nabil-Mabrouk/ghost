@@ -75,7 +75,8 @@ export function parseDriftJson(
   };
 }
 
-const HIGH = /rattle|leak|crack|tilt|loose|vibrat|corros|smoke|drip|grind|hot|burn|frayed|bent/i;
+const HIGH =
+  /rattle|leak|crack|tilt|loose|vibrat|corros|smoke|drip|grind|hot|burn|frayed|bent|wilt|droop|pest|infest|mold|lesion|limp|swollen/i;
 const LOW = /nominal|normal|fine|no issue|unchanged|good condition/i;
 
 /** Last-resort scoring when the model can't produce usable JSON. */

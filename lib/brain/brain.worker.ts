@@ -9,7 +9,6 @@ import {
   type AutomaticSpeechRecognitionPipeline,
 } from "@huggingface/transformers";
 import type { Engine, MainToWorker, ModelName, WorkerToMain } from "./types";
-import { CAPTION_PROMPT } from "./prompts";
 
 const WHISPER_MODEL = "onnx-community/whisper-tiny.en";
 const GEMMA_MODEL = "onnx-community/gemma-4-E2B-it-ONNX";
@@ -172,13 +171,13 @@ async function runGemma(
   return String(decoded[0] ?? "").trim();
 }
 
-async function caption(image: Blob): Promise<string> {
+async function caption(image: Blob, prompt: string): Promise<string> {
   const raw = await RawImage.fromBlob(image);
   return runGemma(
     [
       {
         role: "user",
-        content: [{ type: "image" }, { type: "text", text: CAPTION_PROMPT }],
+        content: [{ type: "image" }, { type: "text", text: prompt }],
       },
     ],
     raw,
@@ -218,7 +217,7 @@ self.onmessage = async (e: MessageEvent<MainToWorker>) => {
         post({
           kind: "result",
           reqId: msg.reqId,
-          payload: await caption(msg.image),
+          payload: await caption(msg.image, msg.prompt),
         });
         break;
       case "analyse":
